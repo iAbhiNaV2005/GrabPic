@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: GrabPic - Serverless Face Recognition Photo Sharing App
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        S3_BUCKET: !Sub "grabpic-photos-${AWS::AccountId}"
+        ALBUMS_TABLE: GrabPic-Albums
+        PHOTOS_TABLE: GrabPic-Photos
+        FACE_MATCH_THRESHOLD: "0.6"
+        LOG_LEVEL: INFO
+        ALLOWED_ORIGIN: "https://grabpic.vercel.app"
+
+
+  Api:
+    Cors:
+      AllowMethods: "'GET, POST, PUT, OPTIONS'"
+      AllowHeaders: "'Content-Type, Authorization'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # ============================================================
+  # DynamoDB Tables
+  # ============================================================
+  AlbumsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: GrabPic-Albums
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: album_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: album_id
+          KeyType: HASH
+
+  PhotosTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: GrabPic-Photos
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: album_id
+          AttributeType: S
+        - AttributeName: photo_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: album_id
+          KeyType: HASH
+        - AttributeName: photo_id
+          KeyType: RANGE
+
+  # ============================================================
+  # Lambda Functions (Zip Based)
+  # ============================================================
+  CreateAlbumFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: grabpic-create-album
+      Runtime: python3.10
+      CodeUri: lambdas/create_album/
+      Handler: handler.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: GrabPic-Albums
+      Events:
+        CreateAlbum:
+          Type: Api
+          Properties:
+            Path: /api/albums
+            Method: POST
+
+  GetAlbumFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: grabpic-get-album
+      Runtime: python3.10
+      CodeUri: lambdas/get_album/
+      Handler: handler.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: GrabPic-Albums
+        - DynamoDBReadPolicy:
+            TableName: GrabPic-Photos
+      Events:
+        GetAlbum:
+          Type: Api
+          Properties:
+            Path: /api/albums/{album_id}
+            Method: GET
+
+  PresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: grabpic-presigned-url
+      Runtime: python3.10
+      CodeUri: lambdas/presigned_url/
+      Handler: handler.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: GrabPic-Albums
+        - S3CrudPolicy:
+            BucketName: !Sub "grabpic-photos-${AWS::AccountId}"
+      Events:
+        PresignedUrl:
+          Type: Api
+          Properties:
+            Path: /api/albums/{album_id}/upload
+            Method: POST
+
+  # ============================================================
+  # Lambda Functions (Image Based — face_recognition/dlib)
+  # ============================================================
+  ProcessPhotoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: grabpic-process-photo
+      PackageType: Image
+      MemorySize: 3008
+      Timeout: 120
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Sub "grabpic-photos-${AWS::AccountId}"
+        - DynamoDBCrudPolicy:
+            TableName: GrabPic-Photos
+        - DynamoDBCrudPolicy:
+            TableName: GrabPic-Albums
+      # NOTE: S3 event trigger is configured via raw CloudFormation below
+      #       to avoid SAM circular dependency with the S3 bucket
+    Metadata:
+      DockerTag: python3.10-v1
+      DockerContext: .
+      Dockerfile: Dockerfile.process
+
+  SearchFacesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: grabpic-search-faces
+      PackageType: Image
+      MemorySize: 3008
+      Timeout: 60
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: GrabPic-Albums
+        - DynamoDBReadPolicy:
+            TableName: GrabPic-Photos
+      Events:
+        SearchFaces:
+          Type: Api
+          Properties:
+            Path: /api/albums/{album_id}/search
+            Method: POST
+    Metadata:
+      DockerTag: python3.10-v1
+      DockerContext: .
+      Dockerfile: Dockerfile.search
+
+  # ============================================================
+  # S3 Bucket + Lambda Trigger (raw CloudFormation to avoid circular dep)
+  # ============================================================
+
+  # Permission for S3 to invoke the ProcessPhoto Lambda
+  ProcessPhotoInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ProcessPhotoFunction.Arn
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub "arn:aws:s3:::grabpic-photos-${AWS::AccountId}"
+
+  # S3 Bucket with notification config pointing to the Lambda
+  PhotosBucket:
+    Type: AWS::S3::Bucket
+    DependsOn: ProcessPhotoInvokePermission
+    Properties:
+      BucketName: !Sub "grabpic-photos-${AWS::AccountId}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET, PUT, POST]
+            AllowedOrigins: ["*"]
+            MaxAge: 3600
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt ProcessPhotoFunction.Arn
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteTempFiles
+            Prefix: temp/
+            Status: Enabled
+            ExpirationInDays: 1
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+
+  PhotosBucketName:
+    Description: S3 bucket for photos
+    Value: !Ref PhotosBucket
+
+  AlbumsTableName:
+    Description: DynamoDB Albums table
+    Value: !Ref AlbumsTable
+
+  PhotosTableName:
+    Description: DynamoDB Photos table
+    Value: !Ref PhotosTable

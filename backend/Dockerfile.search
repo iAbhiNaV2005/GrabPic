@@ -1,0 +1,20 @@
+# Dockerfile for search_faces Lambda (face_recognition + dlib)
+FROM public.ecr.aws/lambda/python:3.10
+
+# Install system dependencies for dlib/face_recognition
+# AFTER:
+RUN yum install -y gcc gcc-c++ make tar gzip curl \
+    && yum clean all
+
+RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.tar.gz | tar -xzf - -C /usr/local --strip-components=1
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy shared modules
+COPY shared/ ${LAMBDA_TASK_ROOT}/shared/
+
+# Copy handler
+COPY lambdas/search_faces/handler.py ${LAMBDA_TASK_ROOT}/
+
+CMD ["handler.lambda_handler"]

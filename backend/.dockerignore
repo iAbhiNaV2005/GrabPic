@@ -1,0 +1,31 @@
+# SAM build artifacts
+.aws-sam/
+
+# Config files not needed in container
+samconfig.toml
+template.yaml
+
+# Git
+.git/
+.gitignore
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Frontend (if present at project root level)
+../frontend/
+
+# Temp files
+*.log
+*.tmp
