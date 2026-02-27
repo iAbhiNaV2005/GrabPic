@@ -1,10 +1,10 @@
-# GrabPic 📸
+# GrabPic 
 
 **Find yourself in group photos using AI-powered facial recognition.**
 
 GrabPic is a serverless photo sharing app where users create albums of group trip photos, share a link, and visitors upload a selfie to instantly find all photos they appear in.
 
-## ✨ Features
+##  Features
 
 - **Album Creation** — Create albums with unique shareable links
 - **Drag & Drop Upload** — Upload group photos with progress tracking
@@ -33,7 +33,7 @@ Frontend (Next.js) → API Gateway → Lambda (Python) → DynamoDB/S3
 | API | AWS API Gateway (REST) |
 | Infra | AWS SAM (CloudFormation) |
 
-## 📂 Project Structure
+##  Project Structure
 
 ```
 GrabPic/
@@ -93,16 +93,3 @@ sam deploy --guided
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for full instructions.
 
-## 💰 Cost
-
-| Service | Monthly Cost |
-|---------|-------------|
-| Lambda | $0.00 (free tier) |
-| API Gateway | $0.00 (free tier) |
-| DynamoDB | $0.00 (on-demand) |
-| S3 | ~$0.01-$0.10 |
-| **Total** | **~$0.01-$0.50** |
-
-## 📝 License
-
-MIT
