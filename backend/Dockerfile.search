@@ -4,6 +4,7 @@ FROM public.ecr.aws/lambda/python:3.10
 # Install system dependencies for dlib/face_recognition
 # AFTER:
 RUN yum install -y gcc gcc-c++ make tar gzip curl \
+    zlib-devel libjpeg-turbo-devel \
     && yum clean all
 
 RUN curl -L https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.tar.gz | tar -xzf - -C /usr/local --strip-components=1

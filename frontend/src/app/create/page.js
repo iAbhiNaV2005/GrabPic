@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createAlbum } from "@/lib/api";
+import { FolderPlus, Shield, Zap, Heart } from "lucide-react";
 
 export default function CreateAlbumPage() {
   const router = useRouter();
@@ -47,44 +48,20 @@ export default function CreateAlbumPage() {
       }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         style={{ width: "100%", maxWidth: 520 }}
       >
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 20,
-              background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.2))",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 32,
-              margin: "0 auto 20px",
-            }}
-          >
-            📁
-          </motion.div>
-          <h1
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              marginBottom: 8,
-              fontFamily: "var(--font-space), sans-serif",
-            }}
-          >
+        <div className="page-header">
+          <div className="page-icon">
+            <FolderPlus size={24} />
+          </div>
+          <h1>
             Create a New <span className="gradient-text">Album</span>
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 16 }}>
-            Give your album a name to get started
-          </p>
+          <p>Give your album a name to get started</p>
         </div>
 
         {/* Form */}
@@ -142,21 +119,12 @@ export default function CreateAlbumPage() {
             </div>
 
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "10px 14px",
-                  color: "#f87171",
-                  fontSize: 14,
-                  marginBottom: 20,
-                }}
+              <div
+                className="inline-error"
+                style={{ marginBottom: 20 }}
               >
                 {error}
-              </motion.div>
+              </div>
             )}
 
             <button
@@ -167,8 +135,6 @@ export default function CreateAlbumPage() {
                 width: "100%",
                 padding: "16px",
                 fontSize: 16,
-                opacity: loading || !albumName.trim() ? 0.6 : 1,
-                cursor: loading || !albumName.trim() ? "not-allowed" : "pointer",
               }}
             >
               {loading ? "Creating..." : "Create Album & Upload Photos"}
@@ -177,22 +143,19 @@ export default function CreateAlbumPage() {
         </div>
 
         {/* Info */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+        <div
           style={{
             marginTop: 24,
             display: "flex",
             justifyContent: "center",
-            gap: 24,
+            gap: 20,
             flexWrap: "wrap",
           }}
         >
           {[
-            { icon: "•", text: "UUID-protected links" },
-            { icon: "•", text: "Instant processing" },
-            { icon: "•", text: "Free to use" },
+            { icon: Shield, text: "UUID-protected links" },
+            { icon: Zap, text: "Instant processing" },
+            { icon: Heart, text: "Free to use" },
           ].map((item, i) => (
             <span
               key={i}
@@ -204,10 +167,11 @@ export default function CreateAlbumPage() {
                 color: "var(--text-muted)",
               }}
             >
-              {item.icon} {item.text}
+              <item.icon size={13} />
+              {item.text}
             </span>
           ))}
-        </motion.div>
+        </div>
       </motion.div>
     </div>
   );

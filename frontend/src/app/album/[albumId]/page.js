@@ -7,6 +7,7 @@ import SelfieCapture from "@/components/SelfieCapture";
 import PhotoGrid from "@/components/PhotoGrid";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { getAlbum, searchFaces } from "@/lib/api";
+import { ScanFace, AlertCircle, RotateCcw } from "lucide-react";
 
 export default function AlbumPage() {
   const { albumId } = useParams();
@@ -53,56 +54,48 @@ export default function AlbumPage() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "70vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <LoadingSpinner text="Loading album..." />
+      <div className="page-container page-container--narrow">
+        <div className="page-header" style={{ opacity: 0.5 }}>
+          <div className="page-icon skeleton" style={{ background: "none" }} />
+          <div className="skeleton" style={{ height: 40, width: "60%", margin: "0 auto 16px" }} />
+          <div className="skeleton" style={{ height: 20, width: "40%", margin: "0 auto" }} />
+        </div>
+        <div className="glass-card skeleton" style={{ height: 300 }} />
+      </div>
+    );
+  }
+
+  if (error && !album) {
+    return (
+      <div className="page-container page-container--narrow">
+        <div className="glass-card" style={{ padding: 48, textAlign: "center" }}>
+          <AlertCircle size={48} style={{ margin: "0 auto 20px", color: "var(--color-destructive)" }} />
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Album Not Found</h1>
+          <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
+            {error}
+          </p>
+          <button onClick={() => window.location.reload()} className="btn-secondary">
+            <RotateCcw size={16} />
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        maxWidth: 900,
-        margin: "0 auto",
-        padding: "40px 24px 80px",
-      }}
-    >
+    <div className="page-container">
       {/* Album Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ textAlign: "center", marginBottom: 48 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="page-header"
       >
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 20,
-            background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.2))",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 32,
-            margin: "0 auto 20px",
-          }}
-        >
-          🔍
+        <div className="page-icon">
+          <ScanFace size={24} />
         </div>
-        <h1
-          style={{
-            fontSize: 32,
-            fontWeight: 700,
-            marginBottom: 8,
-            fontFamily: "var(--font-space), sans-serif",
-          }}
-        >
+        <h1>
           {album?.album_name || "Album"}
         </h1>
         <div
@@ -142,12 +135,7 @@ export default function AlbumPage() {
             </span>
           )}
         </div>
-        <p
-          style={{
-            color: "var(--text-muted)",
-            fontSize: 14,
-          }}
-        >
+        <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
           Upload your selfie to find all photos you appear in
         </p>
       </motion.div>
@@ -157,26 +145,13 @@ export default function AlbumPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="glass-card" style={{ padding: 36, marginBottom: 32 }}>
-            <h2
-              style={{
-                fontSize: 20,
-                fontWeight: 600,
-                marginBottom: 8,
-                fontFamily: "var(--font-space), sans-serif",
-              }}
-            >
+            <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
               Your Selfie
             </h2>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                fontSize: 14,
-                marginBottom: 24,
-              }}
-            >
+            <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 24 }}>
               Take a selfie or upload a clear photo of your face for the best results
             </p>
 
@@ -193,18 +168,12 @@ export default function AlbumPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  style={{
-                    marginTop: 28,
-                    textAlign: "center",
-                  }}
+                  style={{ marginTop: 28, textAlign: "center" }}
                 >
                   <button
                     onClick={handleSearch}
                     className="btn-primary"
-                    style={{
-                      padding: "16px 48px",
-                      fontSize: 17,
-                    }}
+                    style={{ padding: "16px 48px", fontSize: 17 }}
                   >
                     Find My Photos
                   </button>
@@ -225,22 +194,10 @@ export default function AlbumPage() {
 
             {/* Error */}
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "10px 14px",
-                  color: "#f87171",
-                  fontSize: 14,
-                  marginTop: 20,
-                  textAlign: "center",
-                }}
-              >
+              <div className="inline-error" style={{ marginTop: 20, justifyContent: "center" }}>
+                <AlertCircle size={16} />
                 {error}
-              </motion.div>
+              </div>
             )}
           </div>
         </motion.div>
@@ -251,6 +208,7 @@ export default function AlbumPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* Results header */}
           <div
@@ -266,14 +224,7 @@ export default function AlbumPage() {
             }}
           >
             <div>
-              <h2
-                style={{
-                  fontSize: 22,
-                  fontWeight: 700,
-                  fontFamily: "var(--font-space), sans-serif",
-                  marginBottom: 4,
-                }}
-              >
+              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
                 {results.match_count > 0 ? (
                   <>
                     Found{" "}
@@ -286,8 +237,7 @@ export default function AlbumPage() {
                 )}
               </h2>
               <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                Searched {results.total_photos} photos •
-                Threshold: {results.threshold_used}
+                Searched {results.total_photos} photos · Threshold: {results.threshold_used}
               </p>
             </div>
             <button
@@ -298,7 +248,8 @@ export default function AlbumPage() {
               className="btn-secondary"
               style={{ padding: "8px 20px", fontSize: 14 }}
             >
-              ↻ Search Again
+              <RotateCcw size={14} />
+              Search Again
             </button>
           </div>
 
@@ -310,7 +261,7 @@ export default function AlbumPage() {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.3 }}
               style={{
                 textAlign: "center",
                 color: "var(--text-muted)",

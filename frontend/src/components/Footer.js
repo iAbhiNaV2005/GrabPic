@@ -1,9 +1,11 @@
+import { Camera } from "lucide-react";
+
 export default function Footer() {
   return (
     <footer
       style={{
-        borderTop: "1px solid rgba(124, 58, 237, 0.1)",
-        background: "rgba(10, 10, 15, 0.9)",
+        borderTop: "1px solid var(--border-subtle)",
+        background: "rgba(15, 23, 42, 0.9)",
         padding: "32px 24px",
         position: "relative",
         zIndex: 1,
@@ -21,12 +23,9 @@ export default function Footer() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 18 }}>📸</span>
+          <Camera size={18} style={{ color: "var(--purple-400)" }} />
           <span
-            style={{
-              fontWeight: 600,
-              fontFamily: "var(--font-space), sans-serif",
-            }}
+            style={{ fontWeight: 600 }}
             className="gradient-text"
           >
             GrabPic
@@ -34,7 +33,7 @@ export default function Footer() {
         </div>
 
         <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
-          Built with Next.js, AWS Lambda & Face Recognition AI
+          Built with Next.js, AWS Lambda &amp; Face Recognition AI
         </p>
 
         <p style={{ color: "var(--text-muted)", fontSize: 13 }}>

@@ -2,45 +2,23 @@
 
 import { motion } from "framer-motion";
 
-export default function FeatureCard({ icon, title, description, delay = 0 }) {
+export default function FeatureCard({ icon: Icon, title, description, delay = 0 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay }}
+      transition={{ duration: 0.4, delay, ease: [0.16, 1, 0.3, 1] }}
       className="glass-card"
-      style={{
-        padding: 32,
-        textAlign: "center",
-      }}
+      style={{ padding: "28px 24px" }}
     >
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 16,
-          background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.2))",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 28,
-          margin: "0 auto 20px",
-        }}
-      >
-        {icon}
+      <div className="page-icon" style={{ margin: "0 0 16px 0", width: 48, height: 48, borderRadius: 12 }}>
+        <Icon size={22} />
       </div>
-      <h3
-        style={{
-          fontSize: 20,
-          fontWeight: 600,
-          marginBottom: 12,
-          fontFamily: "var(--font-space), sans-serif",
-        }}
-      >
+      <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 10 }}>
         {title}
       </h3>
-      <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: 15 }}>
+      <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, fontSize: 14 }}>
         {description}
       </p>
     </motion.div>

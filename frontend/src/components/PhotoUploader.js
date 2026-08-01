@@ -2,10 +2,12 @@
 
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Upload, ImagePlus, FileImage, X, AlertCircle } from "lucide-react";
 
 export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
   const [dragOver, setDragOver] = useState(false);
   const [files, setFiles] = useState([]);
+  const [errors, setErrors] = useState([]);
   const fileInputRef = useRef(null);
 
   const maxSize = maxSizeMB * 1024 * 1024;
@@ -14,30 +16,27 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
   const validateFiles = useCallback(
     (fileList) => {
       const valid = [];
-      const errors = [];
+      const errs = [];
 
       Array.from(fileList).forEach((file) => {
         if (!allowedTypes.includes(file.type)) {
-          errors.push(`${file.name}: Invalid type. Only JPG/PNG allowed.`);
+          errs.push(`${file.name}: Invalid type. Only JPG/PNG allowed.`);
         } else if (file.size > maxSize) {
-          errors.push(`${file.name}: Exceeds ${maxSizeMB}MB limit.`);
+          errs.push(`${file.name}: Exceeds ${maxSizeMB}MB limit.`);
         } else {
           valid.push(file);
         }
       });
 
-      return { valid, errors };
+      return { valid, errors: errs };
     },
     [maxSize, maxSizeMB]
   );
 
   const handleFiles = useCallback(
     (fileList) => {
-      const { valid, errors } = validateFiles(fileList);
-
-      if (errors.length > 0) {
-        alert(errors.join("\n"));
-      }
+      const { valid, errors: errs } = validateFiles(fileList);
+      setErrors(errs);
 
       if (valid.length > 0) {
         const updatedFiles = [...files, ...valid];
@@ -65,6 +64,18 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
 
   return (
     <div>
+      {/* Inline errors (replaces alert()) */}
+      {errors.length > 0 && (
+        <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+          {errors.map((err, i) => (
+            <div key={i} className="inline-error">
+              <AlertCircle size={14} style={{ flexShrink: 0 }} />
+              {err}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Drop Zone */}
       <div
         className={`upload-zone ${dragOver ? "drag-over" : ""}`}
@@ -86,30 +97,20 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
           id="photo-upload-input"
         />
 
-        <motion.div
-          animate={{ y: dragOver ? -5 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div style={{ fontSize: 48, marginBottom: 16 }}>
-            {dragOver ? "📥" : "🖼️"}
+        <div style={{ transition: "transform 200ms ease", transform: dragOver ? "translateY(-4px)" : "none" }}>
+          <div style={{ marginBottom: 14, color: dragOver ? "var(--purple-400)" : "var(--text-muted)" }}>
+            {dragOver ? <Upload size={40} /> : <ImagePlus size={40} />}
           </div>
-          <p
-            style={{
-              fontSize: 18,
-              fontWeight: 600,
-              marginBottom: 8,
-              color: "var(--text-primary)",
-            }}
-          >
+          <p style={{ fontSize: 17, fontWeight: 600, marginBottom: 6, color: "var(--text-primary)" }}>
             {dragOver ? "Drop your photos!" : "Drag & drop photos here"}
           </p>
-          <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 16 }}>
+          <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 14 }}>
             or click to browse files
           </p>
           <p style={{ color: "var(--text-muted)", fontSize: 12 }}>
-            JPG, PNG • Max {maxSizeMB}MB per file
+            JPG, PNG · Max {maxSizeMB}MB per file
           </p>
-        </motion.div>
+        </div>
       </div>
 
       {/* File Preview List */}
@@ -125,35 +126,21 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
               gap: 8,
             }}
           >
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                fontSize: 14,
-                fontWeight: 500,
-              }}
-            >
+            <p style={{ color: "var(--text-secondary)", fontSize: 14, fontWeight: 500 }}>
               {files.length} photo{files.length > 1 ? "s" : ""} selected
             </p>
 
             {files.map((file, index) => (
               <motion.div
                 key={`${file.name}-${index}`}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ delay: index * 0.05 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px 14px",
-                  background: "rgba(26, 26, 46, 0.6)",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border-subtle)",
-                }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ delay: index * 0.03 }}
+                className="file-item"
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 16 }}>📷</span>
+                  <FileImage size={16} style={{ color: "var(--purple-400)", flexShrink: 0 }} />
                   <span
                     style={{
                       fontSize: 14,
@@ -175,17 +162,10 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
                     e.stopPropagation();
                     removeFile(index);
                   }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--text-muted)",
-                    cursor: "pointer",
-                    fontSize: 16,
-                    padding: 4,
-                  }}
+                  className="file-item-remove"
                   aria-label={`Remove ${file.name}`}
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               </motion.div>
             ))}

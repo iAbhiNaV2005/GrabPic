@@ -101,14 +101,10 @@ def lambda_handler(event, context):
             # Extract face embeddings
             embeddings = extract_face_embeddings(tmp_path)
 
-            # Build photo URL
-            photo_url = f"https://{bucket}.s3.amazonaws.com/{key}"
-
             # Save to DynamoDB
             photo_data = {
                 "album_id": album_id,
                 "photo_id": photo_id,
-                "photo_url": photo_url,
                 "s3_key": key,
                 "face_embeddings": embeddings,
                 "face_count": len(embeddings),
@@ -135,7 +131,6 @@ def lambda_handler(event, context):
                 error_data = {
                     "album_id": album_id,
                     "photo_id": photo_id,
-                    "photo_url": f"https://{bucket}.s3.amazonaws.com/{key}",
                     "s3_key": key,
                     "face_embeddings": [],
                     "face_count": 0,

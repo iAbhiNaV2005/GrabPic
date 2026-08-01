@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import PhotoUploader from "@/components/PhotoUploader";
 import { getPresignedUrl, uploadFileToS3 } from "@/lib/api";
+import { UploadCloud, PartyPopper, CheckCircle2, XCircle, Clock, Copy, ArrowRight, Upload } from "lucide-react";
 
 export default function UploadPhotosPage() {
   const { albumId } = useParams();
@@ -74,45 +75,21 @@ export default function UploadPhotosPage() {
     : 0;
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "0 auto",
-        padding: "40px 24px 80px",
-      }}
-    >
+    <div className="page-container page-container--narrow">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ textAlign: "center", marginBottom: 40 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="page-header"
       >
-        <div
-          style={{
-            width: 72,
-            height: 72,
-            borderRadius: 20,
-            background: "linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.2))",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 32,
-            margin: "0 auto 20px",
-          }}
-        >
-          📤
+        <div className="page-icon">
+          <UploadCloud size={24} />
         </div>
-        <h1
-          style={{
-            fontSize: 28,
-            fontWeight: 700,
-            marginBottom: 8,
-            fontFamily: "var(--font-space), sans-serif",
-          }}
-        >
+        <h1>
           Upload <span className="gradient-text">Photos</span>
         </h1>
-        <p style={{ color: "var(--text-secondary)", fontSize: 15 }}>
+        <p>
           Add your group photos to the album. AI will detect all faces automatically.
         </p>
       </motion.div>
@@ -122,7 +99,7 @@ export default function UploadPhotosPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="glass-card" style={{ padding: 32 }}>
             <PhotoUploader onFilesSelected={setFiles} />
@@ -166,12 +143,14 @@ export default function UploadPhotosPage() {
                         fontSize: 13,
                       }}
                     >
-                      <span>
-                        {uploadProgress[i]?.status === "done"
-                          ? "✅"
-                          : uploadProgress[i]?.status === "error"
-                          ? "❌"
-                          : "⏳"}
+                      <span style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+                        {uploadProgress[i]?.status === "done" ? (
+                          <CheckCircle2 size={16} style={{ color: "var(--color-success)" }} />
+                        ) : uploadProgress[i]?.status === "error" ? (
+                          <XCircle size={16} style={{ color: "var(--color-destructive)" }} />
+                        ) : (
+                          <Clock size={16} style={{ color: "var(--text-muted)" }} />
+                        )}
                       </span>
                       <span
                         style={{
@@ -184,7 +163,7 @@ export default function UploadPhotosPage() {
                       >
                         {file.name}
                       </span>
-                      <span style={{ color: "var(--text-muted)" }}>
+                      <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>
                         {uploadProgress[i]?.percent || 0}%
                       </span>
                     </div>
@@ -194,21 +173,9 @@ export default function UploadPhotosPage() {
             )}
 
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  borderRadius: "var(--radius-sm)",
-                  padding: "10px 14px",
-                  color: "#f87171",
-                  fontSize: 14,
-                  marginTop: 16,
-                }}
-              >
+              <div className="inline-error" style={{ marginTop: 16 }}>
                 {error}
-              </motion.div>
+              </div>
             )}
 
             {/* Action buttons */}
@@ -226,6 +193,7 @@ export default function UploadPhotosPage() {
                   className="btn-primary"
                   style={{ padding: "12px 32px" }}
                 >
+                  <Upload size={18} />
                   Upload {files.length} Photo{files.length > 1 ? "s" : ""}
                 </button>
               </div>
@@ -235,31 +203,20 @@ export default function UploadPhotosPage() {
       ) : (
         /* Upload complete */
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="glass-card"
           style={{
             padding: 48,
             textAlign: "center",
-            background: "linear-gradient(135deg, rgba(124,58,237,0.08), rgba(6,182,212,0.08))",
+            background: "linear-gradient(135deg, rgba(124,58,237,0.08), rgba(8,145,178,0.08))",
           }}
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            style={{ fontSize: 56, marginBottom: 20 }}
-          >
-            🎉
-          </motion.div>
-          <h2
-            style={{
-              fontSize: 24,
-              fontWeight: 700,
-              marginBottom: 12,
-              fontFamily: "var(--font-space), sans-serif",
-            }}
-          >
+          <div style={{ color: "var(--cyan-400)", marginBottom: 20, display: "flex", justifyContent: "center" }}>
+            <PartyPopper size={56} strokeWidth={1.5} />
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>
             Upload Complete!
           </h2>
           <p
@@ -276,7 +233,7 @@ export default function UploadPhotosPage() {
           {/* Share link */}
           <div
             style={{
-              background: "rgba(26, 26, 46, 0.8)",
+              background: "rgba(30, 41, 59, 0.5)",
               borderRadius: "var(--radius-sm)",
               padding: "12px 16px",
               display: "flex",
@@ -296,6 +253,7 @@ export default function UploadPhotosPage() {
                 color: "var(--cyan-400)",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                textAlign: "left",
               }}
             >
               {typeof window !== "undefined"
@@ -309,12 +267,9 @@ export default function UploadPhotosPage() {
                 );
               }}
               className="btn-secondary"
-              style={{
-                padding: "6px 14px",
-                fontSize: 13,
-                whiteSpace: "nowrap",
-              }}
+              style={{ padding: "6px 14px", fontSize: 13 }}
             >
+              <Copy size={14} />
               Copy
             </button>
           </div>
@@ -326,6 +281,7 @@ export default function UploadPhotosPage() {
               style={{ padding: "12px 32px" }}
             >
               Go to Album
+              <ArrowRight size={16} />
             </button>
             <button
               onClick={() => {

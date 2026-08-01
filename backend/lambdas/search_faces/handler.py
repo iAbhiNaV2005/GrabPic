@@ -119,47 +119,56 @@ def lambda_handler(event, context):
 
         logger.info(f"Comparing against {len(processed_photos)} processed photos")
 
-        # Compare selfie against each photo's face embeddings
-        matches = []
+        # Build a flat matrix of all stored embeddings for vectorised comparison
+        all_embeddings = []       # will stack to shape (total_faces, 128)
+        embedding_to_photo = []   # parallel index → photo dict
 
         for photo in processed_photos:
-            embeddings_data = photo.get("face_embeddings", [])
+            for embedding_raw in photo.get("face_embeddings", []):
+                vec = np.array([float(x) for x in embedding_raw], dtype=np.float64)
+                all_embeddings.append(vec)
+                embedding_to_photo.append(photo)
 
-            if not embeddings_data:
-                continue
+        if not all_embeddings:
+            return build_response(200, {
+                "success": True,
+                "data": {
+                    "matches": [],
+                    "total_photos": len(processed_photos),
+                    "match_count": 0,
+                    "threshold_used": FACE_MATCH_THRESHOLD,
+                    "album_name": album.get("album_name", ""),
+                },
+            })
 
-            for embedding_raw in embeddings_data:
-                # Convert Decimal list back to numpy array
-                stored_embedding = np.array(
-                    [float(x) for x in embedding_raw], dtype=np.float64
-                )
+        # Vectorised distance computation — single NumPy C call for all faces
+        matrix = np.stack(all_embeddings)                                  # (N, 128)
+        distances = np.linalg.norm(matrix - selfie_embedding, axis=1)     # (N,)
 
-                # Calculate Euclidean distance
-                distance = np.linalg.norm(selfie_embedding - stored_embedding)
+        # Collect best match per photo (lowest distance wins)
+        best_per_photo = {}  # photo_id → (distance, photo)
+        for idx, dist in enumerate(distances):
+            if dist < FACE_MATCH_THRESHOLD:
+                photo = embedding_to_photo[idx]
+                pid = photo["photo_id"]
+                if pid not in best_per_photo or dist < best_per_photo[pid][0]:
+                    best_per_photo[pid] = (float(dist), photo)
 
-                if distance < FACE_MATCH_THRESHOLD:
-                    # Generate presigned URL for the matched photo
-                    photo_url = s3_client.generate_presigned_url(
-                        "get_object",
-                        Params={
-                            "Bucket": S3_BUCKET,
-                            "Key": photo["s3_key"],
-                        },
-                        ExpiresIn=3600,
-                    )
-
-                    confidence = round((1 - distance / FACE_MATCH_THRESHOLD) * 100, 1)
-
-                    matches.append({
-                        "photo_id": photo["photo_id"],
-                        "photo_url": photo_url,
-                        "distance": round(float(distance), 4),
-                        "confidence": max(0, confidence),
-                    })
-                    break  # One match per photo is enough
-
-        # Sort by distance (best match first)
-        matches.sort(key=lambda m: m["distance"])
+        # Build result list with presigned GET URLs, sorted best-first
+        matches = []
+        for dist, photo in sorted(best_per_photo.values(), key=lambda x: x[0]):
+            photo_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": S3_BUCKET, "Key": photo["s3_key"]},
+                ExpiresIn=3600,
+            )
+            confidence = round((1 - dist / FACE_MATCH_THRESHOLD) * 100, 1)
+            matches.append({
+                "photo_id": photo["photo_id"],
+                "photo_url": photo_url,
+                "distance": round(dist, 4),
+                "confidence": max(0, confidence),
+            })
 
         logger.info(f"Found {len(matches)} matches")
 

@@ -2,11 +2,13 @@
 
 import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
+import { Camera, ImagePlus, Aperture, RotateCcw, Check, AlertCircle } from "lucide-react";
 
 export default function SelfieCapture({ onCapture }) {
   const [mode, setMode] = useState("select"); // "select" | "camera" | "upload"
   const [streaming, setStreaming] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -14,6 +16,7 @@ export default function SelfieCapture({ onCapture }) {
 
   const startCamera = useCallback(async () => {
     setMode("camera");
+    setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: 640, height: 480 },
@@ -23,8 +26,8 @@ export default function SelfieCapture({ onCapture }) {
         videoRef.current.srcObject = stream;
         setStreaming(true);
       }
-    } catch (err) {
-      alert("Camera access denied. Please allow camera access or upload a photo instead.");
+    } catch {
+      setError("Camera access denied. Please allow camera access or upload a photo instead.");
       setMode("select");
     }
   }, []);
@@ -58,14 +61,15 @@ export default function SelfieCapture({ onCapture }) {
     (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      setError("");
 
       if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
-        alert("Please upload a JPG or PNG image.");
+        setError("Please upload a JPG or PNG image.");
         return;
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        alert("File size must be under 10MB.");
+        setError("File size must be under 10MB.");
         return;
       }
 
@@ -84,62 +88,34 @@ export default function SelfieCapture({ onCapture }) {
   const reset = () => {
     setPreview(null);
     setMode("select");
+    setError("");
     stopCamera();
   };
 
   return (
     <div>
+      {/* Inline error (replaces alert()) */}
+      {error && (
+        <div className="inline-error" style={{ marginBottom: 16 }}>
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
       {/* Mode selector */}
       {mode === "select" && !preview && (
-        <div
-          style={{
-            display: "flex",
-            gap: 16,
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={startCamera}
-            className="glass-card"
-            style={{
-              padding: "32px 24px",
-              cursor: "pointer",
-              border: "1px solid var(--border-subtle)",
-              background: "var(--bg-glass)",
-              color: "var(--text-primary)",
-              textAlign: "center",
-              minWidth: 180,
-              fontFamily: "inherit",
-            }}
-          >
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📷</div>
-            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>Take a Selfie</div>
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={startCamera} className="selfie-mode-btn">
+            <Camera size={28} style={{ color: "var(--purple-400)", marginBottom: 10 }} />
+            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Take a Selfie</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Use your camera</div>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => fileInputRef.current?.click()}
-            className="glass-card"
-            style={{
-              padding: "32px 24px",
-              cursor: "pointer",
-              border: "1px solid var(--border-subtle)",
-              background: "var(--bg-glass)",
-              color: "var(--text-primary)",
-              textAlign: "center",
-              minWidth: 180,
-              fontFamily: "inherit",
-            }}
-          >
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🖼️</div>
-            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>Upload Photo</div>
+          <button onClick={() => fileInputRef.current?.click()} className="selfie-mode-btn">
+            <ImagePlus size={28} style={{ color: "var(--cyan-400)", marginBottom: 10 }} />
+            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Upload Photo</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Choose from device</div>
-          </motion.button>
+          </button>
 
           <input
             ref={fileInputRef}
@@ -155,8 +131,9 @@ export default function SelfieCapture({ onCapture }) {
       {/* Camera view */}
       {mode === "camera" && !preview && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: "center" }}
         >
           <div
@@ -189,30 +166,26 @@ export default function SelfieCapture({ onCapture }) {
                   bottom: 16,
                   left: "50%",
                   transform: "translateX(-50%)",
-                  display: "flex",
-                  gap: 12,
                 }}
               >
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={capturePhoto}
                   style={{
-                    width: 64,
-                    height: 64,
+                    width: 56,
+                    height: 56,
                     borderRadius: "50%",
                     background: "white",
-                    border: "4px solid rgba(124,58,237,0.5)",
+                    border: "4px solid rgba(124,58,237,0.4)",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 24,
+                    transition: "transform 150ms ease",
                   }}
                   aria-label="Capture selfie"
                 >
-                  📸
-                </motion.button>
+                  <Aperture size={22} color="#7C3AED" />
+                </button>
               </div>
             )}
           </div>
@@ -226,7 +199,7 @@ export default function SelfieCapture({ onCapture }) {
               className="btn-secondary"
               style={{ padding: "8px 24px", fontSize: 14 }}
             >
-              ← Back
+              Back
             </button>
           </div>
 
@@ -237,8 +210,9 @@ export default function SelfieCapture({ onCapture }) {
       {/* Preview */}
       {preview && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: "center" }}
         >
           <div
@@ -247,7 +221,7 @@ export default function SelfieCapture({ onCapture }) {
               overflow: "hidden",
               display: "inline-block",
               border: "2px solid var(--purple-500)",
-              boxShadow: "0 0 30px rgba(124,58,237,0.3)",
+              boxShadow: "0 0 24px rgba(124,58,237,0.2)",
             }}
           >
             <img
@@ -261,25 +235,27 @@ export default function SelfieCapture({ onCapture }) {
             />
           </div>
 
-          <div style={{ marginTop: 16, display: "flex", gap: 12, justifyContent: "center" }}>
+          <div style={{ marginTop: 16, display: "flex", gap: 12, justifyContent: "center", alignItems: "center" }}>
             <button
               onClick={reset}
               className="btn-secondary"
-              style={{ padding: "8px 24px", fontSize: 14 }}
+              style={{ padding: "8px 20px", fontSize: 14, gap: 6 }}
             >
-              ↻ Retake
+              <RotateCcw size={14} />
+              Retake
             </button>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                color: "var(--cyan-400)",
+                color: "var(--color-success)",
                 fontSize: 14,
                 fontWeight: 500,
               }}
             >
-              ✓ Selfie ready
+              <Check size={16} />
+              Selfie ready
             </div>
           </div>
         </motion.div>
