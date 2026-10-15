@@ -12,6 +12,7 @@ import tempfile
 from decimal import Decimal
 
 import boto3
+from botocore.config import Config as BotoConfig
 import numpy as np
 import face_recognition
 from boto3.dynamodb.conditions import Key
@@ -28,7 +29,11 @@ logger = logging.getLogger()
 logger.setLevel(LOG_LEVEL)
 
 dynamodb = boto3.resource("dynamodb")
-s3_client = boto3.client("s3")
+s3_client = boto3.client(
+    "s3",
+    region_name=os.environ.get("AWS_REGION", "ap-south-1"),
+    config=BotoConfig(s3={"addressing_style": "virtual"}, signature_version="s3v4"),
+)
 albums_table = dynamodb.Table(ALBUMS_TABLE)
 photos_table = dynamodb.Table(PHOTOS_TABLE)
 

@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: GrabPic - Serverless Face Recognition Photo Sharing App
 
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: "*"
+    Description: "Allowed CORS Origin for API Gateway and Lambdas (e.g. * or https://your-domain.vercel.app)"
+
 Globals:
   Function:
     Timeout: 30
@@ -13,8 +19,7 @@ Globals:
         PHOTOS_TABLE: GrabPic-Photos
         FACE_MATCH_THRESHOLD: "0.6"
         LOG_LEVEL: INFO
-        ALLOWED_ORIGIN: "https://grab-pic-one.vercel.app"
-
+        ALLOWED_ORIGIN: !Ref AllowedOrigin
 
   Api:
     Cors:
@@ -152,6 +157,8 @@ Resources:
             TableName: GrabPic-Albums
         - DynamoDBReadPolicy:
             TableName: GrabPic-Photos
+        - S3ReadPolicy:
+            BucketName: !Sub "grabpic-photos-${AWS::AccountId}"
       Events:
         SearchFaces:
           Type: Api

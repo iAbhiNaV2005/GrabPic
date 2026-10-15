@@ -34,17 +34,22 @@ export default function UploadPhotosPage() {
 
         try {
           // Get presigned URL
-          const { presigned_url } = await getPresignedUrl(
+          const { presigned_url, photo_id } = await getPresignedUrl(
             albumId,
             file.name,
             file.type
           );
 
           // Upload to S3
-          await uploadFileToS3(presigned_url, file, (percent) => {
-            progress[i] = { status: "uploading", percent };
-            setUploadProgress({ ...progress });
-          });
+          await uploadFileToS3(
+            presigned_url,
+            file,
+            (percent) => {
+              progress[i] = { status: "uploading", percent };
+              setUploadProgress({ ...progress });
+            },
+            { albumId, photoId: photo_id }
+          );
 
           progress[i] = { status: "done", percent: 100 };
           setUploadProgress({ ...progress });

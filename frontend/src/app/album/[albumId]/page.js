@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import SelfieCapture from "@/components/SelfieCapture";
 import PhotoGrid from "@/components/PhotoGrid";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { getAlbum, searchFaces } from "@/lib/api";
-import { ScanFace, AlertCircle, RotateCcw } from "lucide-react";
+import { getAlbum, searchFaces, isMockMode } from "@/lib/api";
+import { ScanFace, AlertCircle, RotateCcw, Upload, Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function AlbumPage() {
   const { albumId } = useParams();
@@ -74,10 +75,15 @@ export default function AlbumPage() {
           <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
             {error}
           </p>
-          <button onClick={() => window.location.reload()} className="btn-secondary">
-            <RotateCcw size={16} />
-            Try Again
-          </button>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <button onClick={() => window.location.reload()} className="btn-secondary">
+              <RotateCcw size={16} />
+              Try Again
+            </button>
+            <Link href="/create" className="btn-primary">
+              Create New Album
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -101,8 +107,9 @@ export default function AlbumPage() {
         <div
           style={{
             display: "flex",
-            gap: 20,
+            gap: 16,
             justifyContent: "center",
+            alignItems: "center",
             flexWrap: "wrap",
             marginBottom: 8,
           }}
@@ -116,7 +123,7 @@ export default function AlbumPage() {
               color: "var(--text-secondary)",
             }}
           >
-            {album?.photo_count || 0} photos
+            {album?.photo_count || 0} photo{album?.photo_count === 1 ? "" : "s"}
           </span>
           {album?.processed_count !== undefined && (
             <span
@@ -126,14 +133,28 @@ export default function AlbumPage() {
                 gap: 6,
                 fontSize: 14,
                 color:
-                  album.processed_count === album.photo_count
+                  album.processed_count === album.photo_count && album.photo_count > 0
                     ? "var(--cyan-400)"
                     : "var(--text-muted)",
               }}
             >
-              {album.processed_count} processed
+              {album.processed_count} ready
             </span>
           )}
+
+          <Link
+            href={`/album/${albumId}/upload`}
+            className="btn-secondary"
+            style={{
+              padding: "4px 12px",
+              fontSize: 12,
+              gap: 6,
+              borderRadius: "var(--radius-sm)",
+            }}
+          >
+            <Upload size={12} />
+            Add Photos
+          </Link>
         </div>
         <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
           Upload your selfie to find all photos you appear in
@@ -188,7 +209,7 @@ export default function AlbumPage() {
                 animate={{ opacity: 1 }}
                 style={{ marginTop: 24 }}
               >
-                <LoadingSpinner text="Analyzing faces... This may take a moment." />
+                <LoadingSpinner text="Analyzing facial vectors & matching across photos..." />
               </motion.div>
             )}
 
@@ -220,7 +241,7 @@ export default function AlbumPage() {
               justifyContent: "space-between",
               alignItems: "center",
               flexWrap: "wrap",
-              gap: 12,
+              gap: 16,
             }}
           >
             <div>
@@ -236,42 +257,61 @@ export default function AlbumPage() {
                   "No Matches Found"
                 )}
               </h2>
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                Searched {results.total_photos} photos · Threshold: {results.threshold_used}
-              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                  Searched {results.total_photos} photos · Threshold: {results.threshold_used}
+                </p>
+                {results.is_user_uploaded && (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 12,
+                      color: "var(--color-success)",
+                      background: "rgba(16, 185, 129, 0.12)",
+                      border: "1px solid rgba(16, 185, 129, 0.25)",
+                      padding: "2px 8px",
+                      borderRadius: 12,
+                    }}
+                  >
+                    <CheckCircle2 size={12} />
+                    From Your Uploaded Photos
+                  </span>
+                )}
+              </div>
             </div>
-            <button
-              onClick={() => {
-                setResults(null);
-                setSelfieImage(null);
-              }}
-              className="btn-secondary"
-              style={{ padding: "8px 20px", fontSize: 14 }}
-            >
-              <RotateCcw size={14} />
-              Search Again
-            </button>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <Link
+                href={`/album/${albumId}/upload`}
+                className="btn-secondary"
+                style={{ padding: "8px 16px", fontSize: 14 }}
+              >
+                <Upload size={14} />
+                Upload More
+              </Link>
+              <button
+                onClick={() => {
+                  setResults(null);
+                  setSelfieImage(null);
+                }}
+                className="btn-secondary"
+                style={{ padding: "8px 20px", fontSize: 14 }}
+              >
+                <RotateCcw size={14} />
+                Search Again
+              </button>
+            </div>
           </div>
 
           {/* Photo grid */}
-          <PhotoGrid photos={results.matches} />
-
-          {/* Download all hint */}
-          {results.match_count > 0 && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              style={{
-                textAlign: "center",
-                color: "var(--text-muted)",
-                fontSize: 13,
-                marginTop: 32,
-              }}
-            >
-              Click on any photo to view it in full size
-            </motion.p>
-          )}
+          <PhotoGrid
+            photos={results.matches}
+            albumName={album?.album_name}
+            isDemoSample={results.is_demo_sample}
+            albumId={albumId}
+          />
         </motion.div>
       )}
     </div>

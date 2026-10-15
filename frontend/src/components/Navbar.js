@@ -3,21 +3,48 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, Menu, X } from "lucide-react";
+import { Camera, Menu, X, Sparkles, Cloud } from "lucide-react";
+import { isMockMode } from "@/lib/api";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mock = isMockMode();
 
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        {/* Logo */}
-        <Link href="/" className="navbar-logo">
-          <div className="navbar-logo-icon">
-            <Camera size={18} strokeWidth={2.5} />
-          </div>
-          <span className="navbar-logo-text gradient-text">GrabPic</span>
-        </Link>
+        {/* Logo & Mode Badge */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link href="/" className="navbar-logo">
+            <div className="navbar-logo-icon">
+              <Camera size={18} strokeWidth={2.5} />
+            </div>
+            <span className="navbar-logo-text gradient-text">GrabPic</span>
+          </Link>
+
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 8px",
+              borderRadius: 12,
+              background: mock ? "rgba(124, 58, 237, 0.15)" : "rgba(16, 185, 129, 0.15)",
+              color: mock ? "var(--purple-400)" : "var(--color-success)",
+              border: `1px solid ${mock ? "rgba(124, 58, 237, 0.3)" : "rgba(16, 185, 129, 0.3)"}`,
+            }}
+            title={
+              mock
+                ? "Running in client-side dev mode. Uploaded photos are stored in browser."
+                : "Connected to live AWS backend API"
+            }
+          >
+            {mock ? <Sparkles size={11} /> : <Cloud size={11} />}
+            {mock ? "Dev Mode" : "AWS Live"}
+          </span>
+        </div>
 
         {/* Desktop Nav */}
         <div className="navbar-links">

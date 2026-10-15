@@ -39,7 +39,13 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
       setErrors(errs);
 
       if (valid.length > 0) {
-        const updatedFiles = [...files, ...valid];
+        const withPreviews = valid.map((file) => {
+          try {
+            file._preview = URL.createObjectURL(file);
+          } catch {}
+          return file;
+        });
+        const updatedFiles = [...files, ...withPreviews];
         setFiles(updatedFiles);
         onFilesSelected?.(updatedFiles);
       }
@@ -57,6 +63,12 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
   );
 
   const removeFile = (index) => {
+    const fileToRemove = files[index];
+    if (fileToRemove?._preview) {
+      try {
+        URL.revokeObjectURL(fileToRemove._preview);
+      } catch {}
+    }
     const updated = files.filter((_, i) => i !== index);
     setFiles(updated);
     onFilesSelected?.(updated);
@@ -140,7 +152,22 @@ export default function PhotoUploader({ onFilesSelected, maxSizeMB = 10 }) {
                 className="file-item"
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <FileImage size={16} style={{ color: "var(--purple-400)", flexShrink: 0 }} />
+                  {file._preview ? (
+                    <img
+                      src={file._preview}
+                      alt={file.name}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: "var(--radius-sm)",
+                        objectFit: "cover",
+                        border: "1px solid var(--border-subtle)",
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <FileImage size={18} style={{ color: "var(--purple-400)", flexShrink: 0 }} />
+                  )}
                   <span
                     style={{
                       fontSize: 14,
